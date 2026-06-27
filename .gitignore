@@ -1,0 +1,8 @@
+bin/
+obj/
+reports/
+pki/
+appsettings.json
+appsettings.*.json
+!OpcUaClientLoadTest/appsettings.sample.json
+!OpcUaClientLoadTest/appsettings.hd-opcua.sample.json
