@@ -192,7 +192,6 @@ static class OpcUaApplication
         }
 
         application.ApplicationConfiguration = config;
-        await application.CheckApplicationInstanceCertificate(false, 2048);
         return config;
     }
 }
@@ -221,7 +220,7 @@ static class EndpointRunner
 
             IUserIdentity userIdentity = string.IsNullOrWhiteSpace(endpoint.UserName)
                 ? new UserIdentity(new AnonymousIdentityToken())
-                : new UserIdentity(endpoint.UserName, endpoint.Password ?? string.Empty);
+                : new UserIdentity(endpoint.UserName, Encoding.UTF8.GetBytes(endpoint.Password ?? string.Empty));
 
             session = await Session.Create(
                 appConfig,
@@ -272,7 +271,7 @@ static class EndpointRunner
             }
 
             subscription.ApplyChanges();
-            report.MonitoredPoints = subscription.MonitoredItemCount;
+            report.MonitoredPoints = checked((int)subscription.MonitoredItemCount);
             Console.WriteLine($"[{endpoint.Name}] monitoring {report.MonitoredPoints:n0} nodes");
 
             try
