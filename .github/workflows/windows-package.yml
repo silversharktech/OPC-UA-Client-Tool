@@ -1,0 +1,56 @@
+name: Windows Package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  package-win-x64:
+    name: Build Windows x64 package
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore .\OpcUaClientLoadTest\OpcUaClientLoadTest.csproj
+
+      - name: Publish win-x64
+        run: >
+          dotnet publish .\OpcUaClientLoadTest\OpcUaClientLoadTest.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o .\artifacts\opcua-client-loadtest-windows-x64
+
+      - name: Copy docs and config samples
+        shell: pwsh
+        run: |
+          Copy-Item .\README.md .\artifacts\opcua-client-loadtest-windows-x64\
+          Copy-Item .\OpcUaClientLoadTest\appsettings.sample.json .\artifacts\opcua-client-loadtest-windows-x64\
+          Copy-Item .\OpcUaClientLoadTest\appsettings.hd-opcua.sample.json .\artifacts\opcua-client-loadtest-windows-x64\
+
+      - name: Create zip
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path .\artifacts\opcua-client-loadtest-windows-x64\* `
+            -DestinationPath .\artifacts\opcua-client-loadtest-windows-x64.zip `
+            -Force
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: opcua-client-loadtest-windows-x64
+          path: .\artifacts\opcua-client-loadtest-windows-x64.zip
+          if-no-files-found: error
