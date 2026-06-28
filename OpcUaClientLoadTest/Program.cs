@@ -90,6 +90,43 @@ Console.WriteLine($"  CSV  : {Path.GetFullPath(endpointCsvPath)}");
 Console.WriteLine($"  CSV  : {Path.GetFullPath(signalCsvPath)}");
 return report.Endpoints.Any(e => e.Error is not null) ? 1 : 0;
 
+static string? GetArgValue(string[] values, string name)
+{
+    for (var i = 0; i < values.Length - 1; i++)
+    {
+        if (string.Equals(values[i], name, StringComparison.OrdinalIgnoreCase))
+        {
+            return values[i + 1];
+        }
+    }
+
+    var prefix = name + "=";
+    var inline = values.FirstOrDefault(v => v.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+    return inline is null ? null : inline[prefix.Length..];
+}
+
+static void PrintUsage()
+{
+    Console.WriteLine("""
+    OPC UA Client Load Test
+
+    Run with a config:
+      opcua-client-loadtest.exe appsettings.json
+
+    Generate an HD_OPC_UA sharded config:
+      opcua-client-loadtest.exe --init-hd-opcua-config --host 192.168.3.166 --base-port 4840 --shards 16 --duration-seconds 1800 --out appsettings.hd-opcua.json
+
+    Important config fields:
+      durationSeconds              Collection duration.
+      endpoints[].url              OPC UA endpoint URL.
+      endpoints[].browseRoots      Variable browse roots, e.g. ns=2;s=HD Online Sampled Values.
+      endpoints[].nodeIds          Explicit variable NodeIds, e.g. ns=2;s=Mac04\[45:496].
+      publishingIntervalMs         Subscription publish interval.
+      samplingIntervalMs           Monitored item sampling interval.
+      queueSize                    Monitored item queue size.
+    """);
+}
+
 static class OpcUaApplication
 {
     public static async Task<ApplicationConfiguration> CreateAsync(bool acceptUntrustedCertificates)
@@ -404,43 +441,6 @@ static class EndpointRunner
             stats.Add(timestamp, StatusCode.IsGood(value.StatusCode));
         }
     }
-}
-
-static string? GetArgValue(string[] values, string name)
-{
-    for (var i = 0; i < values.Length - 1; i++)
-    {
-        if (string.Equals(values[i], name, StringComparison.OrdinalIgnoreCase))
-        {
-            return values[i + 1];
-        }
-    }
-
-    var prefix = name + "=";
-    var inline = values.FirstOrDefault(v => v.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-    return inline is null ? null : inline[prefix.Length..];
-}
-
-static void PrintUsage()
-{
-    Console.WriteLine("""
-    OPC UA Client Load Test
-
-    Run with a config:
-      opcua-client-loadtest.exe appsettings.json
-
-    Generate an HD_OPC_UA sharded config:
-      opcua-client-loadtest.exe --init-hd-opcua-config --host 192.168.3.166 --base-port 4840 --shards 16 --duration-seconds 1800 --out appsettings.hd-opcua.json
-
-    Important config fields:
-      durationSeconds              Collection duration.
-      endpoints[].url              OPC UA endpoint URL.
-      endpoints[].browseRoots      Variable browse roots, e.g. ns=2;s=HD Online Sampled Values.
-      endpoints[].nodeIds          Explicit variable NodeIds, e.g. ns=2;s=Mac04\[45:496].
-      publishingIntervalMs         Subscription publish interval.
-      samplingIntervalMs           Monitored item sampling interval.
-      queueSize                    Monitored item queue size.
-    """);
 }
 
 static class HdOpcUaConfigFactory
